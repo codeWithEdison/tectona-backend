@@ -7,6 +7,21 @@ const app = express();
 // middle to parse json data 
 app.use(express.json());
 
+// auth middle 
+
+const authenticateToken = (req, res, next)=>{
+  const authHeader = req.headers['authorization'];
+  const token =  authHeader && authHeader.split(' ')[1];
+
+  if(!token) return res.sendStatus(401);
+
+  jwt.verify(token, 'your_jwt_secret_key', (err, user)=>{
+    if(err) return res.sendStatus(403) // fobiddden
+    req.user = user
+    next()
+  })
+}
+
 // database  connection  
 const db = mysql.createConnection({
   host: "localhost",
@@ -27,6 +42,8 @@ db.connect((err) => {
 app.get("/", (req, res) => {
   res.send("Welcome to  our Tectona API ...");
 });
+
+
 
 app.get("/api/users", (req, res) => {
   let sql = "select * from users";
@@ -51,8 +68,8 @@ app.get("/api/clients", (req, res) => {
   });
 });
 
-app.post("/api/register", (req, res) => {
-  const { username, password, email, role } = req.body;
+app.post("/api/register", (req, res) => { 
+  const { username, password, email, role } = req.body; 
   let hashedpassword = bcrypt.hashSync(password, 8);
   let sql ="insert into users (username, password, email, role) values (?, ?, ?, ?)";
   /*
@@ -128,7 +145,30 @@ app.post('/api/login', (req, res) =>{
     })
 })
 
-// enpoint 
+// enpoint
+app.post('/api/clients', authenticateToken, (req, res)=>{
+
+  const {names, contactinfo, address, notes} = req.body;
+  const userid = req.user.id;
+  let sql = " insert into clients( names, contactinfo, address, notes, createb_by) value (?,?,?,?,?)";
+if(req.user.role != 'secrataire'){
+   return res.status(401).json({
+    message: 'only secrataire can create client'
+   }) 
+}
+  db.query(sql, [names,contactinfo,address,notes, userid], (err, results)=>{
+    if(err){
+      res.status(500).json({
+        message: "fail to create client",
+        error: err
+      })
+    } else{
+      res.status(201).json({
+        message: " client created sucessfull" 
+      })
+    }
+  })
+})
 
 app.listen(5000, () => {
   console.log("Server is running on port 5000 and u are welcome ...");
