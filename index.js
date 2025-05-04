@@ -68,6 +68,19 @@ app.get("/api/clients", (req, res) => {
   });
 });
 
+app.get("/api/clients/:id", (req, res) => {
+  let userid = req.params.id; 
+
+  let sql = "select * from clients where clientid = ?";
+  db.query(sql, userid, (err, result) => {
+    if (err) {
+      res.status(500).send("Error fetching clients: " + err);
+    } else {
+      res.status(200).json(result);
+    }
+  });
+});
+
 app.post("/api/register", (req, res) => { 
   const { username, password, email, role } = req.body; 
   let hashedpassword = bcrypt.hashSync(password, 8);
