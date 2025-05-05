@@ -68,7 +68,7 @@ app.get("/api/clients", (req, res) => {
   });
 });
 
-app.get("/api/clients/:id", (req, res) => {
+app.get("/api/clients/:id", authenticateToken, (req, res) => {
   let userid = req.params.id; 
 
   let sql = "select * from clients where clientid = ?";
@@ -178,6 +178,47 @@ if(req.user.role != 'secrataire'){
     } else{
       res.status(201).json({
         message: " client created sucessfull" 
+      })
+    }
+  })
+});
+
+// delete client
+
+app.delete('/api/clients/:id', authenticateToken, (req, res)=>{
+  let clientid = req.params.id;
+  let sql = "  delete from clients where clientid =?";
+
+  db.query(sql, clientid, (err, results)=>{
+    if(err){
+      res.status(500).json({
+        message: "  fail to delete  client",
+        error: err 
+      })
+     
+    } else{
+      res.status(200).json({
+        message: "  client deleted successfully"
+      })
+    }
+  })
+});
+
+app.put('/api/clients/:id', (req, res)=>{
+  const clientid = req.params.id;
+  const {names, contactinfo, address, notes} = req.body;
+
+  let sql  = "update  clients set names = ? , contactInfo = ?, address = ?, notes = ? where clientid = ? ";
+  db.query(sql, [names, contactinfo, address, notes, clientid], (err, result)=>{
+    if(err){
+      res.status(500).json({
+        message: "  fail to update   client",
+        error: err 
+      })
+     
+    } else{
+      res.status(200).json({
+        message: "  client updated successfully"
       })
     }
   })
